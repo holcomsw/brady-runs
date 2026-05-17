@@ -42,7 +42,17 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     setMessage('')
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName || email.split('@')[0],
+          athlete_name: athleteName || displayName || email.split('@')[0],
+          username: (displayName || email.split('@')[0]).toLowerCase().replace(/\s+/g, '_'),
+        },
+      },
+    })
     if (error) {
       setError(error.message)
       setLoading(false)
