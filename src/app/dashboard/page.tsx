@@ -96,10 +96,11 @@ export default function DashboardPage() {
 
       const userId = session.user.id
 
-      const [profileRes, workoutsRes, achievementsRes] = await Promise.all([
+      const [profileRes, workoutsRes, achievementsRes, racesRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('workouts').select('*').eq('user_id', userId).order('workout_date', { ascending: false }),
         supabase.from('achievements').select('*').eq('user_id', userId),
+        supabase.from('athletic_results').select('*').order('meet_date', { ascending: false }),
       ])
 
       const prof = profileRes.data as Profile | null
@@ -111,14 +112,7 @@ export default function DashboardPage() {
       const ach = (achievementsRes.data || []) as Achievement[]
       setAchievements(ach)
 
-      if (prof?.athlete_name) {
-        const { data: racesData } = await supabase
-          .from('athletic_results')
-          .select('*')
-          .eq('athlete_name', prof.athlete_name)
-          .order('meet_date', { ascending: false })
-        setRaces((racesData || []) as AthleticResult[])
-      }
+      setRaces((racesRes.data || []) as AthleticResult[])
 
       await checkAndGrantAchievements(userId, ach, ws)
       setLoading(false)

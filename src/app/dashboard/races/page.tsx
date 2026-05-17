@@ -43,16 +43,17 @@ export default function RacesPage() {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-      setProfile(prof as Profile | null)
-      if (prof?.athlete_name) {
-        const { data } = await supabase
+
+      const [profRes, racesRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+        supabase
           .from('athletic_results')
           .select('*')
-          .eq('athlete_name', prof.athlete_name)
-          .order('meet_date', { ascending: false })
-        setRaces((data || []) as AthleticResult[])
-      }
+          .order('meet_date', { ascending: false }),
+      ])
+
+      setProfile(profRes.data as Profile | null)
+      setRaces((racesRes.data || []) as AthleticResult[])
       setLoading(false)
     }
     load()
@@ -159,14 +160,12 @@ export default function RacesPage() {
         <RaceCharts races={races} />
       )}
 
-      {profile?.athlete_name && (
-        <RaceForm
-          open={showForm}
-          onClose={() => setShowForm(false)}
-          athleteName={profile.athlete_name}
-          onSaved={handleSaved}
-        />
-      )}
+      <RaceForm
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        athleteName={profile?.athlete_name || races[0]?.athlete_name || 'Brady Holcomb'}
+        onSaved={handleSaved}
+      />
 
       <Toast toasts={toasts} onRemove={removeToast} />
     </div>
